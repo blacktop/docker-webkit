@@ -34,9 +34,12 @@ FROM ubuntu:bionic
 
 LABEL maintainer "https://github.com/blacktop"
 
-RUN apt-get update && apt-get install -y bubblewrap
+RUN apt-get update && apt-get install -y bubblewrap \
+  && echo "===> Clean up unnecessary files..." \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/*
 
-COPY --from=builder /WebKit /WebKit
+COPY --from=builder /WebKit/WebKitBuild/Debug/bin /WebKit/bin
 
 WORKDIR /WebKit
 

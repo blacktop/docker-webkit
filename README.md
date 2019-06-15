@@ -28,3 +28,14 @@ blacktop/webkit        2.6          40.1MB
 ```
 
 ## Getting Started
+
+> :warning: You shouldn't run docker containers from the internet with these `--cap` and `--security-opt` unless you know what you are doing.
+
+```bash
+$ docker run --init -it --rm \
+             --cap-add=SYS_PTRACE \
+             --security-opt seccomp:unconfined \
+             blacktop/webkit:jsc
+
+>>>
+```

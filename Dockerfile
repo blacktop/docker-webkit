@@ -14,7 +14,10 @@ RUN git clone git://git.webkit.org/WebKit.git /WebKit \
 ####################################################################################################
 FROM ubuntu:bionic
 
-RUN apt-get update && apt-get install -y bubblewrap
+RUN apt-get update && apt-get install -y bubblewrap \
+  && echo "===> Clean up unnecessary files..." \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/*
 
 COPY --from=builder /WebKit /WebKit
 
