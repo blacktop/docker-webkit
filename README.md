@@ -1,10 +1,15 @@
-![logo](https://github.com/blacktop/docker-webkit/raw/master/docs/logo.png)
-
-# docker-webkit
-
-[![CircleCI](https://circleci.com/gh/blacktop/docker-webkit.png?style=shield)](https://circleci.com/gh/blacktop/docker-webkit) [![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org) [![Docker Stars](https://img.shields.io/docker/stars/blacktop/webkit.svg)](https://hub.docker.com/r/blacktop/webkit/) [![Docker Pulls](https://img.shields.io/docker/pulls/blacktop/webkit.svg)](https://hub.docker.com/r/blacktop/webkit/) [![Docker Image](https://img.shields.io/badge/docker%20image-40.1MB-blue.svg)](https://hub.docker.com/r/blacktop/webkit/)
-
-> Dockerized WebKit Dev/Research Environment
+<p align="center">
+  <a href="https://github.com/blacktop/docker-webkit"><img alt="Logo" src="https://github.com/blacktop/docker-webkit/raw/master/docs/logo.png" height="140" /></a>
+  <a href="https://github.com/blacktop/docker-webkit"><h3 align="center">docker-webkit</h3></a>
+  <p align="center">Dockerized WebKit Dev/Research Environment</p>
+  <p align="center">
+    <a href="https://hub.docker.com/r/blacktop/webkit/" alt="Docker Stars">
+          <img src="https://img.shields.io/docker/stars/blacktop/webkit.svg" /></a>
+    <a href="https://hub.docker.com/r/blacktop/webkit/" alt="Docker Pulls">
+          <img src="https://img.shields.io/docker/pulls/blacktop/webkit.svg" /></a>
+    <a href="https://hub.docker.com/r/blacktop/webkit/" alt="Docker Image">
+          <img src="https://img.shields.io/badge/docker%20image-1.18GB-blue.svg" /></a>
+</p>
 
 ---
 
