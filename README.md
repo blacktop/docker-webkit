@@ -22,9 +22,9 @@
 ```bash
 $ docker images
 
-REPOSITORY           TAG          SIZE
-blacktop/webkit        latest       40.1MB
-blacktop/webkit        2.6          40.1MB
+REPOSITORY           TAG               SIZE
+blacktop/webkit      minibrowser       40.1MB
+blacktop/webkit      jsc               40.1MB
 ```
 
 ## Getting Started
