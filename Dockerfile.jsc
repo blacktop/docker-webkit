@@ -34,6 +34,38 @@ FROM ubuntu:bionic
 
 LABEL maintainer "https://github.com/blacktop"
 
+ENV TERM screen-256color
+ENV PYTHONIOENCODING UTF-8
+# ENV GDB_VERSION 7.11.1-0ubuntu1~16.5
+ENV GDB_VERSION 8.1-0ubuntu3
+
+RUN buildDeps='ca-certificates git build-essential wget cmake pkg-config' \
+  && dpkg --add-architecture i386 \
+  && apt-get update \
+  && apt-get install -yq $buildDeps \
+                         sudo \
+                         ltrace \
+                         strace \
+                         python3 \
+                         locales \
+                         binutils \
+                         libc6:i386 \
+                         libstdc++6:i386 \
+                         gdb=$GDB_VERSION \
+                         gdb-multiarch=$GDB_VERSION \
+  && echo "===> Fix locale..." \
+  && locale-gen en_US.UTF-8 \
+  && localedef -i en_US -f UTF-8 en_US.UTF-8 \
+  && echo "===> Install pwndbg..." \
+  && cd /tmp \
+  && git clone https://github.com/pwndbg/pwndbg \
+  && cd pwndbg \
+  && ./setup.sh \
+  && echo "===> Clean up unnecessary files..." \
+  && apt-get purge -y --auto-remove $buildDeps \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/*
+
 RUN apt-get update && apt-get install -y bubblewrap \
   && echo "===> Clean up unnecessary files..." \
   && apt-get clean \

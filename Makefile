@@ -11,7 +11,7 @@ build: ## Build docker image
 	docker build -f Dockerfile.jsc -t $(ORG)/$(NAME):$(BUILD) .
 
 .PHONY: size
-size: build ## Get built image size
+size: ## Get built image size
 ifeq "$(BUILD)" "$(LATEST)"
 	sed -i.bu 's/docker%20image-.*-blue/docker%20image-$(shell docker images --format "{{.Size}}" $(ORG)/$(NAME):$(BUILD)| cut -d' ' -f1)-blue/' README.md
 	sed -i.bu '/latest/ s/[0-9.]\{3,5\}MB/$(shell docker images --format "{{.Size}}" $(ORG)/$(NAME):$(BUILD))/' README.md
