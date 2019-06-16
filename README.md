@@ -8,7 +8,7 @@
     <a href="https://hub.docker.com/r/blacktop/webkit/" alt="Docker Pulls">
           <img src="https://img.shields.io/docker/pulls/blacktop/webkit.svg" /></a>
     <a href="https://hub.docker.com/r/blacktop/webkit/" alt="Docker Image">
-          <img src="https://img.shields.io/badge/docker%20image-10GB-blue.svg" /></a>
+          <img src="https://img.shields.io/badge/docker%20image-946MB-blue.svg" /></a>
 </p>
 
 ---
@@ -23,8 +23,8 @@
 $ docker images
 
 REPOSITORY           TAG               SIZE
-blacktop/webkit      minibrowser       40.1MB
-blacktop/webkit      jsc               40.1MB
+blacktop/webkit      minibrowser       946MB
+blacktop/webkit      jsc               946MB
 ```
 
 ## Getting Started

@@ -1,11 +1,3 @@
-FROM ubuntu:bionic as downloader
-
-RUN apt-get update && apt-get install -y wget
-WORKDIR /tmp
-RUN wget --progress=bar:force https://s3-us-west-2.amazonaws.com/archives.webkit.org/WebKit-SVN-source.tar.bz2
-RUN tar jxvf WebKit-SVN-source.tar.bz2
-
-####################################################################################################
 # FROM ubuntu:bionic as cloner
 
 # RUN apt-get update && apt-get install -y git-core git-svn
@@ -14,9 +6,14 @@ RUN tar jxvf WebKit-SVN-source.tar.bz2
 ####################################################################################################
 FROM ubuntu:bionic as builder
 
-COPY --from=downloader /tmp/webkit /WebKit
+RUN apt-get update && apt-get install -y wget
 
-WORKDIR /WebKit
+WORKDIR /tmp
+
+RUN wget --progress=bar:force https://s3-us-west-2.amazonaws.com/archives.webkit.org/WebKit-SVN-source.tar.bz2
+RUN tar jxvf WebKit-SVN-source.tar.bz2
+
+WORKDIR /tmp/webkit
 
 RUN apt-get update && apt-get install -y subversion git-core git-svn cmake build-essential python libicu-dev libxml-libxml-perl ninja-build ruby gperf bison flex
 
@@ -65,15 +62,15 @@ RUN apt-get update && apt-get install -y bubblewrap rlwrap \
   && rm -rf /var/lib/apt/lists/* /tmp/*
 
 # COPY --from=builder /WebKit /WebKit
-COPY --from=builder /WebKit/WebKitBuild/Debug/bin /WebKit/WebKitBuild/Debug/bin
-COPY --from=builder /WebKit/WebKitBuild/Debug/lib /WebKit/WebKitBuild/Debug/lib
+COPY --from=builder /tmp/webkit/WebKitBuild/Debug/bin /webkit/WebKitBuild/Debug/bin
+COPY --from=builder /tmp/webkit/WebKitBuild/Debug/lib /webkit/WebKitBuild/Debug/lib
 
-WORKDIR /WebKit/WebKitBuild/Debug
+WORKDIR /webkit/WebKitBuild/Debug
 
-ENV LD_LIBRARY_PATH=/WebKit/WebKitBuild/Debug/lib
+ENV LD_LIBRARY_PATH=/webkit/WebKitBuild/Debug/lib
 
-ENV TERM screen-256color
 ENV LC_ALL en_US.UTF-8
+ENV TERM screen-256color
 ENV PYTHONIOENCODING UTF-8
 
 ENTRYPOINT ["bin/jsc"]
