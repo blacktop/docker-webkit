@@ -33,7 +33,7 @@ blacktop/webkit      CVE-2018-4262     946MB
 ## Getting Started
 
 ```bash
-$ docker run --init -it --rm blacktop/webkit:jsc
+$ docker run --init -it --rm blacktop/webkit:snapshot
 
 >>> print("HALP!");
 HALP!
@@ -43,13 +43,11 @@ HALP!
 
 ```bash
 $ cat test.js
-
 print(1+1);
 ```
 
 ```bash
-$ docker run --init -it --rm -v `pwd`:/data blacktop/webkit:jsc /data/test.js
-
+$ docker run --init -it --rm -v `pwd`:/data blacktop/webkit:snapshot /data/test.js
 2
 ```
 
@@ -62,9 +60,7 @@ $ docker run --init -it --rm \
              --cap-add=SYS_PTRACE \
              --security-opt seccomp:unconfined \
              --entrypoint=bash \
-             blacktop/webkit:jsc
-
-root@f7516eaa387a:/webkit/WebKitBuild/Debug# gdb bin/jsc
+             blacktop/webkit:snapshot gdb
 
 pwndbg> r
 Starting program: /webkit/WebKitBuild/Debug/bin/jsc
@@ -101,7 +97,7 @@ pwndbg> tele 0x7fe806be4010-8
 05:0028│   0x7fe806be4030 ◂— 0xbadbeef0
 ```
 
-### CVE-2018-4262
+### `CVE-2018-4262`
 
 ```bash
 $ wget https://raw.githubusercontent.com/blacktop/docker-webkit/master/CVE-2018-4262/test.js
