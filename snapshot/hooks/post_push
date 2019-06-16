@@ -1,0 +1,10 @@
+#!/bin/bash
+
+set -e
+
+DATE=$(date +%Y-%m-%d)
+
+echo "===> Tagging $IMAGE_NAME as $DOCKER_REPO:$DATE"
+docker tag $IMAGE_NAME $DOCKER_REPO:$DATE
+echo "===> Pushing $DOCKER_REPO:$DATE"
+docker push $DOCKER_REPO:$DATE
