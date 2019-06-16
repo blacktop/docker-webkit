@@ -40,3 +40,47 @@ $ docker run --init -it --rm \
 >>> print("HALP!");
 HALP!
 ```
+
+### Debugging
+
+```bash
+$ docker run --init -it --rm \
+             --cap-add=SYS_PTRACE \
+             --security-opt seccomp:unconfined \
+             --entrypoint=bash \
+             blacktop/webkit:jsc
+
+root@f7516eaa387a:/webkit/WebKitBuild/Debug# gdb bin/jsc
+
+pwndbg> r
+Starting program: /webkit/WebKitBuild/Debug/bin/jsc
+warning: Error disabling address space randomization: Operation not permitted
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+[New Thread 0x7ff0edf52700 (LWP 18)]
+>>> describe([1,2,3,4])
+Object: "0x7ff0acec01b0" with butterfly "0x7fe806be4010" (Structure 0x7ff0acefe370:[Array, {}, CopyOnWriteArrayWithInt32, Proto:0x7ff0acec0010, Leaf]), StructureID: 64910
+>>> ^C
+```
+
+#### Telecope the Object
+
+```bash
+pwndbg> tele 0x7ff0acec01b0
+00:0000│   0x7ff0acec01b0 ◂— 0x10822150000fd8e
+01:0008│   0x7ff0acec01b8 —▸ 0x7fe806be4010 ◂— 0xffff000000000001 <--------- 🦋
+02:0010│   0x7ff0acec01c0 ◂— 0xbadbeef0
+... ↓
+```
+
+#### Telecope the Butterfly *(minus 8 to see the length)*
+
+```bash
+pwndbg> tele 0x7fe806be4010-8
+00:0000│   0x7fe806be4008 ◂— 0x400000004         <--------- LENGTH
+01:0008│   0x7fe806be4010 ◂— 0xffff000000000001  <--------- array values
+02:0010│   0x7fe806be4018 ◂— 0xffff000000000002
+03:0018│   0x7fe806be4020 ◂— 0xffff000000000003
+04:0020│   0x7fe806be4028 ◂— 0xffff000000000004
+05:0028│   0x7fe806be4030 ◂— 0xbadbeef0
+```
