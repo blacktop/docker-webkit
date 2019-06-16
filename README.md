@@ -53,14 +53,8 @@ $ docker run --init -it --rm -v `pwd`:/data blacktop/webkit:snapshot /data/test.
 
 ### Debugging
 
-> ⚠️ You shouldn't run docker containers from the internet with these `--cap` and `--security-opt` unless you know what you are doing. ⚠️
-
 ```bash
-$ docker run --init -it --rm \
-             --cap-add=SYS_PTRACE \
-             --security-opt seccomp:unconfined \
-             --entrypoint=bash \
-             blacktop/webkit:snapshot gdb
+$ docker run --init -it --rm blacktop/webkit:snapshot gdb
 
 pwndbg> r
 Starting program: /webkit/WebKitBuild/Debug/bin/jsc
@@ -74,6 +68,8 @@ Object: "0x7ff0acec01b0" with butterfly "0x7fe806be4010"
       [Array, {}, CopyOnWriteArrayWithInt32, Proto:0x7ff0acec0010, Leaf]), StructureID: 64910
 >>> ^C
 ```
+
+> **NOTE:** You might need to add `--cap-add=SYS_PTRACE` or `--security-opt seccomp:unconfined` to debug the kernel
 
 #### Telecope the `Object`
 

@@ -8,7 +8,7 @@ LATEST ?=$(shell cat LATEST)
 all: build size test
 
 build: ## Build docker image
-	cd $(BUILD); docker build --build-arg BUILD_DATE=$(date +%Y-%m-%d) -f Dockerfile.jsc -t $(ORG)/$(NAME):$(BUILD) .
+	cd $(BUILD); docker build --build-arg BUILD_DATE=$(shell date +%Y-%m-%d) -f Dockerfile.jsc -t $(ORG)/$(NAME):$(BUILD) .
 
 .PHONY: size
 size: ## Get built image size
