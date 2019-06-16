@@ -76,6 +76,7 @@ ENV LD_LIBRARY_PATH=/webkit/WebKitBuild/Debug/lib
 ENV LC_ALL en_US.UTF-8
 ENV TERM screen-256color
 ENV PYTHONIOENCODING UTF-8
+ENV RLWRAP_HOME /data
 
 COPY entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint

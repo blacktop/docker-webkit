@@ -36,7 +36,7 @@ push: build ## Push docker image to docker registry
 
 .PHONY: run
 run: ## Run docker container
-	@docker run --init -it --rm --name $(NAME) $(ORG)/$(NAME):$(BUILD)
+	@docker run --init -it --rm --name $(NAME) -v `pwd`:/data $(ORG)/$(NAME):$(BUILD)
 
 .PHONY: ssh
 ssh:  ## SSH into docker image
