@@ -1,0 +1,316 @@
+Index: Source/JavaScriptCore/jsc.cpp
+===================================================================
+--- Source/JavaScriptCore/jsc.cpp	(revision 245504)
++++ Source/JavaScriptCore/jsc.cpp	(working copy)
+@@ -3054,7 +3054,8 @@
+ #if ENABLE(WEBASSEMBLY)
+     JSC::Wasm::enableFastMemory();
+ #endif
+-    Gigacage::disableDisablingPrimitiveGigacageIfShouldBeEnabled();
++    //Gigacage::disableDisablingPrimitiveGigacageIfShouldBeEnabled();
++    Gigacage::disablePrimitiveGigacage();
+ 
+ #if PLATFORM(COCOA)
+     auto& memoryPressureHandler = MemoryPressureHandler::singleton();
+Index: Source/JavaScriptCore/runtime/CommonIdentifiers.h
+===================================================================
+--- Source/JavaScriptCore/runtime/CommonIdentifiers.h	(revision 245504)
++++ Source/JavaScriptCore/runtime/CommonIdentifiers.h	(working copy)
+@@ -156,6 +156,12 @@
+     macro(osrExitSites) \
+     macro(osrExits) \
+     macro(parse) \
++    \
++    macro(arrayHax) \
++    macro(addr_of) \
++    macro(read_offset) \
++    macro(obj_at_addr) \
++    \
+     macro(parseInt) \
+     macro(parseFloat) \
+     macro(profiledBytecodes) \
+Index: Source/JavaScriptCore/runtime/ConsoleObject.cpp
+===================================================================
+--- Source/JavaScriptCore/runtime/ConsoleObject.cpp	(revision 245504)
++++ Source/JavaScriptCore/runtime/ConsoleObject.cpp	(working copy)
+@@ -110,14 +110,61 @@
+     return value.toWTFString(exec);
+ }
+ 
++static CString cStringFromViewWithString(ExecState* exec, ThrowScope& scope, StringViewWithUnderlyingString& viewWithString)
++{
++    Expected<CString, UTF8ConversionError> expectedString = viewWithString.view.tryGetUtf8();
++    if (expectedString)
++        return expectedString.value();
++    switch (expectedString.error()) {
++    case UTF8ConversionError::OutOfMemory:
++        throwOutOfMemoryError(exec, scope);
++        break;
++    case UTF8ConversionError::IllegalSource:
++        scope.throwException(exec, createError(exec, "Illegal source encountered during UTF8 conversion"));
++        break;
++    case UTF8ConversionError::SourceExhausted:
++        scope.throwException(exec, createError(exec, "Source exhausted during UTF8 conversion"));
++        break;
++    default:
++        RELEASE_ASSERT_NOT_REACHED();
++    }
++    return { };
++}
++
++static EncodedJSValue printInternal(ExecState* exec, FILE* out)
++{
++    VM& vm = exec->vm();
++    auto scope = DECLARE_THROW_SCOPE(vm);
++
++    for (unsigned i = 0; i < exec->argumentCount(); ++i) {
++        if (i)
++            if (EOF == fputc(' ', out))
++                goto fail;
++
++        auto viewWithString = exec->uncheckedArgument(i).toString(exec)->viewWithUnderlyingString(exec);
++        RETURN_IF_EXCEPTION(scope, encodedJSValue());
++        auto string = cStringFromViewWithString(exec, scope, viewWithString);
++        RETURN_IF_EXCEPTION(scope, encodedJSValue());
++        if (fprintf(out, "%s", string.data()) < 0)
++            goto fail;
++    }
++
++    fputc('\n', out);
++fail:
++    fflush(out);
++    return JSValue::encode(jsUndefined());
++}
++
+ static EncodedJSValue consoleLogWithLevel(ExecState* exec, MessageLevel level)
+ {
+     ConsoleClient* client = exec->lexicalGlobalObject()->consoleClient();
+     if (!client)
+-        return JSValue::encode(jsUndefined());
++        return printInternal(exec, stdout);
+ 
+-    client->logWithLevel(exec, Inspector::createScriptArguments(exec, 0), level);
+-    return JSValue::encode(jsUndefined());
++    return printInternal(exec, stdout);
++
++    //client->logWithLevel(exec, Inspector::createScriptArguments(exec, 0), level);
++    //return JSValue::encode(jsUndefined());
+ }
+ 
+ static EncodedJSValue JSC_HOST_CALL consoleProtoFuncDebug(ExecState* exec)
+Index: Source/JavaScriptCore/runtime/JSGlobalObject.cpp
+===================================================================
+--- Source/JavaScriptCore/runtime/JSGlobalObject.cpp	(revision 245504)
++++ Source/JavaScriptCore/runtime/JSGlobalObject.cpp	(working copy)
+@@ -675,6 +675,18 @@
+             init.set(ProxyRevoke::createStructure(init.vm, init.owner, init.owner->m_functionPrototype.get()));
+         });
+ 
++    Identifier arrayHaxIdentifier = Identifier::fromString(&vm, "arrayHax");
++    putDirectWithoutTransition(vm, arrayHaxIdentifier, JSFunction::create(vm, this, 1, arrayHaxIdentifier.string(), globalFuncArrayHax));
++
++    Identifier addrOfIdentifier = Identifier::fromString(&vm, "addr_of");
++    putDirectWithoutTransition(vm, addrOfIdentifier, JSFunction::create(vm, this, 1, addrOfIdentifier.string(), globalFuncAddrOf));
++
++    Identifier readOffsetIdentifier = Identifier::fromString(&vm, "read_offset");
++    putDirectWithoutTransition(vm, readOffsetIdentifier, JSFunction::create(vm, this, 2, readOffsetIdentifier.string(), globalFuncReadOffset));
++
++    Identifier objAtAddrIdentifier = Identifier::fromString(&vm, "obj_at_addr");
++    putDirectWithoutTransition(vm, objAtAddrIdentifier, JSFunction::create(vm, this, 1, objAtAddrIdentifier.string(), globalFuncObjAtAddr));
++
+     m_parseIntFunction.initLater(
+         [] (const Initializer<JSFunction>& init) {
+             init.set(JSFunction::create(init.vm, init.owner, 2, init.vm.propertyNames->parseInt.string(), globalFuncParseInt, ParseIntIntrinsic));
+@@ -1655,6 +1667,11 @@
+     visitor.append(thisObject->m_nullGetterFunction);
+     visitor.append(thisObject->m_nullSetterFunction);
+ 
++    visitor.append(thisObject->m_arrayHaxFunction);
++    visitor.append(thisObject->m_addrOfFunction);
++    visitor.append(thisObject->m_readOffsetFunction);
++    visitor.append(thisObject->m_objAtAddrFunction);
++
+     thisObject->m_parseIntFunction.visit(visitor);
+     thisObject->m_parseFloatFunction.visit(visitor);
+     visitor.append(thisObject->m_callFunction);
+Index: Source/JavaScriptCore/runtime/JSGlobalObject.h
+===================================================================
+--- Source/JavaScriptCore/runtime/JSGlobalObject.h	(revision 245504)
++++ Source/JavaScriptCore/runtime/JSGlobalObject.h	(working copy)
+@@ -287,6 +287,12 @@
+     WriteBarrier<NullGetterFunction> m_nullGetterFunction;
+     WriteBarrier<NullSetterFunction> m_nullSetterFunction;
+ 
++    WriteBarrier<JSFunction> m_arrayHaxFunction;
++
++    WriteBarrier<JSFunction> m_addrOfFunction;
++    WriteBarrier<JSFunction> m_readOffsetFunction;
++    WriteBarrier<JSFunction> m_objAtAddrFunction;
++
+     LazyProperty<JSGlobalObject, JSFunction> m_parseIntFunction;
+     LazyProperty<JSGlobalObject, JSFunction> m_parseFloatFunction;
+ 
+Index: Source/JavaScriptCore/runtime/JSGlobalObjectFunctions.cpp
+===================================================================
+--- Source/JavaScriptCore/runtime/JSGlobalObjectFunctions.cpp	(revision 245504)
++++ Source/JavaScriptCore/runtime/JSGlobalObjectFunctions.cpp	(working copy)
+@@ -473,6 +473,79 @@
+     return jsStrDecimalLiteral(data, end);
+ }
+ 
++EncodedJSValue JSC_HOST_CALL globalFuncArrayHax(ExecState* exec)
++{
++    if (exec->argumentCount() < 1)
++        return JSValue::encode(JSValue(JSC::JSValue::JSFalse));
++    VM& vm = exec->vm();
++    JSObject* object = jsDynamicCast<JSObject*>(vm, exec->argument(0));
++    if (!object || !object->butterfly())
++        return JSValue::encode(JSValue(JSC::JSValue::JSFalse));
++
++    void* butterfly = object->butterfly();
++    // Overwrite public length of butterfly
++    *(uint32_t*)(butterfly-8) = 0x41414141;
++
++    return JSValue::encode(JSValue(JSC::JSValue::JSTrue));
++}
++
++EncodedJSValue JSC_HOST_CALL globalFuncAddrOf(ExecState* exec)
++{
++    JSValue value = exec->argument(0);
++    if (!value.isCell())
++        return JSValue::encode(jsUndefined());
++    // Need to cast to uint64_t so bitwise_cast will play along.
++    uint64_t asNumber = reinterpret_cast<uint64_t>(value.asCell());
++    EncodedJSValue returnValue = JSValue::encode(jsNumber(bitwise_cast<double>(asNumber)));
++    return returnValue;
++}
++
++EncodedJSValue JSC_HOST_CALL globalFuncReadOffset(ExecState* exec)
++{
++    VM& vm = exec->vm();
++    auto scope = DECLARE_THROW_SCOPE(vm);
++
++    if (exec->argumentCount() < 2)
++        return JSValue::encode(throwException(exec, scope, createError(exec, "Not enough args"_s)));
++
++    JSObject* object = jsDynamicCast<JSObject*>(vm, exec->argument(0));
++    if (!object)
++        return JSValue::encode(throwException(exec, scope, createError(exec, "Not a JSObject"_s)));
++
++    JSValue value = exec->argument(1);
++    if (!value.isNumber())
++        return JSValue::encode(throwException(exec, scope, createError(exec, "Bad index"_s)));
++
++    int32_t index = value.asNumber();
++
++    if (index < 0 || index > 10)
++        return JSValue::encode(throwException(exec, scope, createError(exec, "Bad index"_s)));
++
++    uint64_t* data = reinterpret_cast<uint64_t*>(object);
++    uint64_t result = data[index];
++
++    EncodedJSValue returnValue = JSValue::encode(jsNumber(bitwise_cast<double>(result)));
++    return returnValue;
++}
++
++EncodedJSValue JSC_HOST_CALL globalFuncObjAtAddr(ExecState* exec)
++{
++    VM& vm = exec->vm();
++    auto scope = DECLARE_THROW_SCOPE(vm);
++
++    if (exec->argumentCount() < 1)
++        return JSValue::encode(throwException(exec, scope, createError(exec, "Not enough args"_s)));
++
++    JSValue value = exec->argument(0);
++    if (!value.isNumber())
++        return JSValue::encode(throwException(exec, scope, createError(exec, "Not a number"_s)));
++
++    JSCell* obj = bitwise_cast<JSCell*>(value.asNumber());
++
++    EncodedJSValue returnValue = JSValue::encode(obj);
++    return returnValue;
++}
++
+ EncodedJSValue JSC_HOST_CALL globalFuncEval(ExecState* exec)
+ {
+     VM& vm = exec->vm();
+Index: Source/JavaScriptCore/runtime/JSGlobalObjectFunctions.h
+===================================================================
+--- Source/JavaScriptCore/runtime/JSGlobalObjectFunctions.h	(revision 245504)
++++ Source/JavaScriptCore/runtime/JSGlobalObjectFunctions.h	(working copy)
+@@ -37,6 +37,11 @@
+ 
+ extern const ASCIILiteral ObjectProtoCalledOnNullOrUndefinedError;
+ 
++EncodedJSValue JSC_HOST_CALL globalFuncArrayHax(ExecState*);
++EncodedJSValue JSC_HOST_CALL globalFuncAddrOf(ExecState*);
++EncodedJSValue JSC_HOST_CALL globalFuncReadOffset(ExecState*);
++EncodedJSValue JSC_HOST_CALL globalFuncObjAtAddr(ExecState*);
++
+ EncodedJSValue JSC_HOST_CALL globalFuncEval(ExecState*);
+ EncodedJSValue JSC_HOST_CALL globalFuncParseInt(ExecState*);
+ EncodedJSValue JSC_HOST_CALL globalFuncParseFloat(ExecState*);
+Index: Source/JavaScriptCore/runtime/StructureIDTable.cpp
+===================================================================
+--- Source/JavaScriptCore/runtime/StructureIDTable.cpp	(revision 245504)
++++ Source/JavaScriptCore/runtime/StructureIDTable.cpp	(working copy)
+@@ -57,6 +57,7 @@
+         table()[i].offset = i + 1;
+     table()[last].offset = 0;
+ 
++    /*
+     // Randomize the free list.
+     uint32_t size = last - first + 1;
+     uint32_t maxIterations = (size * 2) / 3;
+@@ -92,6 +93,7 @@
+         head = afterCut;
+         table()[cut].offset = 0;
+     }
++    */
+ 
+     m_firstFreeOffset = head;
+     m_lastFreeOffset = tail;
+@@ -142,6 +144,7 @@
+     // structureID is encountered (with incorrect entropyBits), the decoded
+     // structure pointer for that ID will be always be a bad pointer with
+     // high bits set.
++    /*
+     constexpr uint32_t entropyBitsMask = (1 << s_numberOfEntropyBits) - 1;
+     uint32_t entropyBits = m_weakRandom.getUint32() & entropyBitsMask;
+     if (UNLIKELY(!entropyBits)) {
+@@ -148,6 +151,8 @@
+         constexpr uint32_t numberOfValuesToPickFrom = entropyBitsMask;
+         entropyBits = (m_weakRandom.getUint32() % numberOfValuesToPickFrom) + 1;
+     }
++    */
++    uint32_t entropyBits = 0;
+ 
+     uint32_t structureIndex = m_firstFreeOffset;
+     m_firstFreeOffset = table()[m_firstFreeOffset].offset;
+Index: Source/WebCore/page/SecurityOrigin.cpp
+===================================================================
+--- Source/WebCore/page/SecurityOrigin.cpp	(revision 245504)
++++ Source/WebCore/page/SecurityOrigin.cpp	(working copy)
+@@ -241,6 +241,8 @@
+ 
+ bool SecurityOrigin::canAccess(const SecurityOrigin& other) const
+ {
++    printf("SecurityOrigin(@%p)->m_universalAccess = %u\n", this, m_universalAccess);
++
+     if (m_universalAccess)
+         return true;
+ 
+Index: Source/WebKit/WebProcess/WebProcess.cpp
+===================================================================
+--- Source/WebKit/WebProcess/WebProcess.cpp	(revision 245504)
++++ Source/WebKit/WebProcess/WebProcess.cpp	(working copy)
+@@ -224,7 +224,8 @@
+     });
+ #endif
+     
+-    Gigacage::disableDisablingPrimitiveGigacageIfShouldBeEnabled();
++    //Gigacage::disableDisablingPrimitiveGigacageIfShouldBeEnabled();
++    Gigacage::disablePrimitiveGigacage();
+ }
+ 
+ WebProcess::~WebProcess()

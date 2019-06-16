@@ -23,8 +23,11 @@
 $ docker images
 
 REPOSITORY           TAG               SIZE
-blacktop/webkit      minibrowser       946MB
+blacktop/webkit      latest            946MB
 blacktop/webkit      jsc               946MB
+blacktop/webkit      minibrowser       946MB
+blacktop/webkit      snapshot          946MB
+blacktop/webkit      CVE-2018-4262     946MB
 ```
 
 ## Getting Started
@@ -96,4 +99,22 @@ pwndbg> tele 0x7fe806be4010-8
 03:0018│   0x7fe806be4020 ◂— 0xffff000000000003
 04:0020│   0x7fe806be4028 ◂— 0xffff000000000004
 05:0028│   0x7fe806be4030 ◂— 0xbadbeef0
+```
+
+### CVE-2018-4262
+
+```bash
+$ wget
+$ docker run --init -it --rm -v `pwd`:/data blacktop/webkit:CVE-2018-4262 /data/test.js CVE-2018-4262
+
+Object: 0x7f5843db4340 with butterfly 0x7f48000e4008 (Structure 0x7f5843df2ae0:[Array, {}, ArrayWithContiguous, Proto:0x7f5843dc80a0]), StructureID: 99
+6.91776252510795e-310
+```
+
+#### Convert `double` to address
+
+```bash
+$ python -c 'import struct; print(hex(struct.unpack("Q", struct.pack("d", 6.91776252510795e-310))[0]))'
+
+0x7f5843db4340 👍
 ```

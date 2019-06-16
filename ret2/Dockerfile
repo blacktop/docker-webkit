@@ -6,6 +6,8 @@
 #####################################################################################
 FROM ubuntu:bionic as builder
 
+ENV COMMIT 3af5ce129e6636350a887d01237a65c2fce77823
+
 RUN apt-get update && apt-get install -y wget
 
 WORKDIR /tmp
@@ -15,24 +17,16 @@ RUN tar jxvf WebKit-SVN-source.tar.bz2
 
 WORKDIR /tmp/webkit
 
-RUN apt-get update && apt-get install -y libxml-libxml-perl \
-                                         build-essential \
-                                         ninja-build \
-                                         libicu-dev \
-                                         subversion \
-                                         git-core \
-                                         git-svn \
-                                         python \
-                                         bison \
-                                         cmake \
-                                         gperf \
-                                         flex \
-                                         ruby
+RUN apt-get update && apt-get install -y subversion git-core git-svn cmake build-essential python libicu-dev libxml-libxml-perl ninja-build ruby gperf bison flex
 
-RUN echo $(svn info --show-item last-changed-revision) > /tmp/revision
-# RUN Tools/Scripts/update-webkit
+# RUN svn switch --relocate http://svn.webkit.org/repository/webkit/trunk https://svn.webkit.org/repository/webkit/trunk
+RUN Tools/Scripts/update-webkit
+RUN svn up -r245504
+# RUN Tools/Scripts/webkit-patch setup-git-clone
+RUN DEBIAN_FRONTEND=noninteractive Tools/gtk/install-dependencies
+RUN DEBIAN_FRONTEND=noninteractive Tools/Scripts/update-webkitgtk-libs
 RUN Tools/Scripts/set-webkit-configuration --debug
-RUN Tools/Scripts/build-webkit --jsc-only --cmakeargs="-GNinja -DENABLE_UNIFIED_BUILDS=OFF"
+RUN Tools/Scripts/build-webkit --gtk --cmakeargs="-GNinja -DENABLE_UNIFIED_BUILDS=OFF" MiniBrowser
 
 #####################################################################################
 FROM ubuntu:bionic
@@ -71,25 +65,14 @@ RUN apt-get update && apt-get install -y bubblewrap rlwrap \
   && rm -rf /var/lib/apt/lists/* /tmp/*
 
 COPY --from=builder /tmp/webkit/WebKitBuild/Debug/bin /webkit/WebKitBuild/Debug/bin
-COPY --from=builder /tmp/webkit/WebKitBuild/Debug/lib /webkit/WebKitBuild/Debug/lib
-COPY --from=builder /tmp/revision /webkit/revision
+COPY --from=builder /tmp/webkit/WebKitBuild/Debug/bin /webkit/WebKitBuild/Debug/bin
+COPY --from=builder /tmp/webkit/Tools/Scripts /webkit/Tools/Scripts
 
-ENV REVISION $(cat /webkit/revision)
 ENV LD_LIBRARY_PATH=/webkit/WebKitBuild/Debug/lib
-
-ENV LC_ALL en_US.UTF-8
-ENV TERM screen-256color
-ENV PYTHONIOENCODING UTF-8
-ENV RLWRAP_HOME /data
-
-COPY entrypoint.sh /usr/local/bin/entrypoint
-RUN chmod +x /usr/local/bin/entrypoint
 
 WORKDIR /webkit/WebKitBuild/Debug
 
-ENTRYPOINT ["entrypoint"]
-CMD ["jsc"]
+ENTRYPOINT ["/webkit/Tools/Scripts"]
+CMD ["--help"]
 
-ARG BUILD_DATE
-
-LABEL Name=docker-webkit Version=$BUILD_DATE
+LABEL Name=docker-webkit Version=245504

@@ -8,7 +8,7 @@ LATEST ?=$(shell cat LATEST)
 all: build size test
 
 build: ## Build docker image
-	cd $(BUILD); docker build -f Dockerfile.jsc -t $(ORG)/$(NAME):$(BUILD) .
+	cd $(BUILD); docker build --build-arg BUILD_DATE=$(date +%Y-%m-%d) -f Dockerfile.jsc -t $(ORG)/$(NAME):$(BUILD) .
 
 .PHONY: size
 size: ## Get built image size
@@ -40,7 +40,7 @@ run: ## Run docker container
 
 .PHONY: ssh
 ssh:  ## SSH into docker image
-	@docker run --init -it --rm --entrypoint=bash $(ORG)/$(NAME):$(BUILD)
+	@docker run --init -it --rm --entrypoint=bash -v `pwd`:/data $(ORG)/$(NAME):$(BUILD)
 
 .PHONY: stop-all
 stop-all: ## Kill ALL running docker containers
