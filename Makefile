@@ -8,7 +8,7 @@ LATEST ?=$(shell cat LATEST)
 all: build size test
 
 build: ## Build docker image
-	docker build -f Dockerfile.jsc -t $(ORG)/$(NAME):$(BUILD) .
+	cd $(BUILD); docker build -f Dockerfile.jsc -t $(ORG)/$(NAME):$(BUILD) .
 
 .PHONY: size
 size: ## Get built image size
