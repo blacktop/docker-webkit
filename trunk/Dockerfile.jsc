@@ -15,8 +15,19 @@ RUN tar jxvf WebKit-SVN-source.tar.bz2
 
 WORKDIR /tmp/webkit
 
-RUN apt-get update && apt-get install -y subversion git-core git-svn cmake build-essential python libicu-dev libxml-libxml-perl ninja-build ruby gperf bison flex
-
+RUN apt-get update && apt-get install -y libxml-libxml-perl \
+                                         build-essential \
+                                         ninja-build \
+                                         libicu-dev \
+                                         subversion \
+                                         git-core \
+                                         git-svn \
+                                         python \
+                                         bison \
+                                         cmake \
+                                         gperf \
+                                         flex \
+                                         ruby
 # RUN svn switch --relocate http://svn.webkit.org/repository/webkit/trunk https://svn.webkit.org/repository/webkit/trunk
 RUN Tools/Scripts/update-webkit
 # RUN Tools/Scripts/webkit-patch setup-git-clone
@@ -62,15 +73,18 @@ RUN apt-get update && apt-get install -y bubblewrap rlwrap \
 COPY --from=builder /tmp/webkit/WebKitBuild/Debug/bin /webkit/WebKitBuild/Debug/bin
 COPY --from=builder /tmp/webkit/WebKitBuild/Debug/lib /webkit/WebKitBuild/Debug/lib
 
-WORKDIR /webkit/WebKitBuild/Debug
-
 ENV LD_LIBRARY_PATH=/webkit/WebKitBuild/Debug/lib
 
 ENV LC_ALL en_US.UTF-8
 ENV TERM screen-256color
 ENV PYTHONIOENCODING UTF-8
 
-ENTRYPOINT ["bin/jsc"]
-CMD ["--help"]
+COPY entrypoint.sh /usr/local/bin/entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
+
+WORKDIR /webkit/WebKitBuild/Debug
+
+ENTRYPOINT ["entrypoint"]
+CMD ["jsc"]
 
 LABEL Name=docker-webkit Version=0.0.1

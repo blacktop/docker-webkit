@@ -29,19 +29,30 @@ blacktop/webkit      jsc               946MB
 
 ## Getting Started
 
-> :warning: You shouldn't run docker containers from the internet with these `--cap` and `--security-opt` unless you know what you are doing.
-
 ```bash
-$ docker run --init -it --rm \
-             --cap-add=SYS_PTRACE \
-             --security-opt seccomp:unconfined \
-             blacktop/webkit:jsc
+$ docker run --init -it --rm blacktop/webkit:jsc
 
 >>> print("HALP!");
 HALP!
 ```
 
+### Run a javascript file
+
+```bash
+$ cat test.js
+
+print(1+1);
+```
+
+```bash
+$ docker run --init -it --rm -v `pwd`:/data blacktop/webkit:jsc /data/test.js
+
+2
+```
+
 ### Debugging
+
+> ⚠️ You shouldn't run docker containers from the internet with these `--cap` and `--security-opt` unless you know what you are doing. ⚠️
 
 ```bash
 $ docker run --init -it --rm \
@@ -59,11 +70,13 @@ warning: Error disabling address space randomization: Operation not permitted
 Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 [New Thread 0x7ff0edf52700 (LWP 18)]
 >>> describe([1,2,3,4])
-Object: "0x7ff0acec01b0" with butterfly "0x7fe806be4010" (Structure 0x7ff0acefe370:[Array, {}, CopyOnWriteArrayWithInt32, Proto:0x7ff0acec0010, Leaf]), StructureID: 64910
+Object: "0x7ff0acec01b0" with butterfly "0x7fe806be4010"
+(Structure 0x7ff0acefe370:
+      [Array, {}, CopyOnWriteArrayWithInt32, Proto:0x7ff0acec0010, Leaf]), StructureID: 64910
 >>> ^C
 ```
 
-#### Telecope the Object
+#### Telecope the `Object`
 
 ```bash
 pwndbg> tele 0x7ff0acec01b0
@@ -73,7 +86,7 @@ pwndbg> tele 0x7ff0acec01b0
 ... ↓
 ```
 
-#### Telecope the Butterfly *(minus 8 to see the length)*
+#### Telecope the `butterfly` *(minus 8 to see the length)*
 
 ```bash
 pwndbg> tele 0x7fe806be4010-8
