@@ -8,7 +8,7 @@
     <a href="https://hub.docker.com/r/blacktop/webkit/" alt="Docker Pulls">
           <img src="https://img.shields.io/docker/pulls/blacktop/webkit.svg" /></a>
     <a href="https://hub.docker.com/r/blacktop/webkit/" alt="Docker Image">
-          <img src="https://img.shields.io/badge/docker%20image-1.04GB-blue.svg" /></a>
+          <img src="https://img.shields.io/badge/docker%20image-10GB-blue.svg" /></a>
 </p>
 
 ---
@@ -37,5 +37,6 @@ $ docker run --init -it --rm \
              --security-opt seccomp:unconfined \
              blacktop/webkit:jsc
 
->>>
+>>> print("HALP!");
+HALP!
 ```

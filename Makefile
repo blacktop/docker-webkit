@@ -40,7 +40,7 @@ run: ## Run docker container
 
 .PHONY: ssh
 ssh:  ## SSH into docker image
-	@docker run --rm -v `pwd`/pcap:/pcap --entrypoint=bash $(ORG)/$(NAME):$(BUILD)
+	@docker run --init -it --rm --entrypoint=bash $(ORG)/$(NAME):$(BUILD)
 
 .PHONY: stop-all
 stop-all: ## Kill ALL running docker containers
