@@ -23,15 +23,10 @@ RUN apt-get update && apt-get install -y libxml-libxml-perl \
                                          flex \
                                          ruby
 
-# RUN Tools/Scripts/update-webkit
-
-RUN svn up -r245504
-COPY jsc_fakeobj.patch /tmp/jsc_fakeobj.patch
-RUN patch -p0 -i /tmp/jsc_fakeobj.patch
+RUN svn up -r246578
 
 RUN Tools/Scripts/set-webkit-configuration --debug
 RUN Tools/Scripts/build-webkit --jsc-only --cmakeargs="-GNinja"
-
 
 #####################################################################################
 FROM ubuntu:bionic
@@ -87,4 +82,4 @@ WORKDIR /webkit/WebKitBuild/Debug
 ENTRYPOINT ["entrypoint"]
 CMD ["jsc"]
 
-LABEL Name=docker-webkit Version=245504
+LABEL Name=docker-webkit Version=246578 iOS=12.3.1
