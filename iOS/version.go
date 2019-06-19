@@ -38,9 +38,9 @@ func main() {
 
 	match := re.Find(b.Bytes())
 	if len(match) > 0 {
-		fmt.Println(string(match))
+		fmt.Println(string(match[1:]))
 	} else {
 		log.Fatal("unable to find WebKit version")
 	}
-
+	// TODO: crawl https://trac.webkit.org/browser/webkit/branches?order=date
 }
