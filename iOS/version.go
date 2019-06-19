@@ -11,12 +11,12 @@ import (
 )
 
 func main() {
+
 	if len(os.Args) < 2 {
 		log.Fatal("you must supply path to dyld_shared_cache")
 	}
 
-	c1 := exec.Command("jtool2", "-d", fmt.Sprintf("%s:WebKit", os.Args[1]))
-
+	c1 := exec.Command("jtool2", "-d", fmt.Sprintf("%s:JavaScriptCore", os.Args[1]))
 	c2 := exec.Command("grep", "-m", "1", "/BuildRoot/Library/Caches/com.apple.xbs/Sources")
 
 	r, w := io.Pipe()
