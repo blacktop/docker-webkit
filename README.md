@@ -71,7 +71,7 @@ Object: "0x7ff0acec01b0" with butterfly "0x7fe806be4010"
 
 > **NOTE:** You might need to add `--cap-add=SYS_PTRACE` or `--security-opt seccomp:unconfined` to debug the kernel
 
-#### Telecope the `Object`
+#### Telescope the `Object`
 
 ```bash
 pwndbg> tele 0x7ff0acec01b0
@@ -81,7 +81,7 @@ pwndbg> tele 0x7ff0acec01b0
 ... ↓
 ```
 
-#### Telecope the `butterfly` *(minus 8 to see the length)*
+#### Telescope the `butterfly` *(minus 8 to see the length)*
 
 ```bash
 pwndbg> tele 0x7fe806be4010-8
