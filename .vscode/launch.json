@@ -1,0 +1,25 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug",
+            "program": "${workspaceFolder}/WebKitBuild/Debug/bin/jsc",
+            "env": {
+                "DYLD_FRAMEWORK_PATH": "${workspaceFolder}/WebKitBuild/Debug",
+                // "PYTHONPATH": "${workspaceFolder}/Tools/Scripts/webkitpy"
+            },
+            "args": [],
+            "initCommands": [
+                "command script import ${workspaceRoot}/Tools/Scripts/webkitpy",
+                "command script import ${workspaceRoot}/Tools/lldb/lldb_webkit.py",
+                "command script import ${workspaceRoot}/Tools/lldb/lldb_dump_class_layout.py",
+            ],
+            "cwd": "${workspaceFolder}/WebKitBuild/Debug"
+        }
+    ]
+}
